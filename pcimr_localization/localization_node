@@ -34,6 +34,10 @@ class LocalizationNode():
         self.pub_marker = rospy.Publisher("/visualization/cube", Marker, queue_size=10)
         self.pub_grid = rospy.Publisher("/grid", OccupancyGrid, queue_size=10)
 
+
+        self.timestep = []
+
+
     def callback_move(self, param_move):
         global move
         move = param_move
@@ -62,25 +66,28 @@ class LocalizationNode():
         global move
         global scan
    
-        #Count accessible field[0]s 
-        fields = 0
-        for field in enumerate(grid.data):
-            if field[1] == 0:
-                fields += 1
+        probabilities = self.timestep
+        
+        #Initialize first probability array
+        if(len(self.timestep) == 0):
 
-    
-        #Probability of being kidnapped randomly to one field[0], for each field[0]
-        self.ptx = 1/fields
-        #probabilities = np.full((len(grid.data)), 1/fields)
-        #probabilities = np.reshape(probabilities, (20, 20))
-        probabilities = np.transpose(np.asarray(grid.data, dtype=np.float).reshape(grid.info.width, grid.info.height))
+            #Count accessible field[0]s 
+            fields = 0
+            for field in enumerate(grid.data):
+                if field[1] == 0:
+                    fields += 1
 
-        for field in enumerate(grid.data):
-            x, y= divmod(field[0], 20)
-            if field[1] != 0: 
-                probabilities[x][y] = 0
-            else: 
-                probabilities[x][y] = self.ptx
+        
+            #Probability of being kidnapped randomly to one field, for each field
+            self.ptx = 1/fields
+
+            probabilities = np.transpose(np.asarray(grid.data, dtype=np.float).reshape(grid.info.width, grid.info.height))
+            for field in enumerate(grid.data):
+                y, x = divmod(field[0], 20)
+                if field[1] != 0: 
+                    probabilities[y][x] = 0
+                else: 
+                    probabilities[y][x] = self.ptx
 
         sum_p = 0
         for field in enumerate(grid.data):
@@ -144,43 +151,54 @@ class LocalizationNode():
             if(scan == None):
                 pass
             else:
+                print(scan)
+                q = None
+                r = None
+                w = None
+                e = None
                 if(field[0]-grid.info.width*int(scan.ranges[0]+1) >= 0):
                     if(grid.data[field[0]-grid.info.width*int(scan.ranges[0])] ==  100):
-                        p_bel1 += 0.8 * p_bel1
+                        q = 0.8 * p_bel1
                     elif(grid.data[field[0]-grid.info.width*int(scan.ranges[0]+1)] == 100 or grid.data[field[0]-grid.info.width*int(scan.ranges[0]-1)] == 100):
-                        p_bel1 += 0.1 * p_bel1
+                        q = 0.1 * p_bel1
                     else: 
-                        p_bel1 = 0.0
+                        q = 0.0
 
-                if(field[0]-1*int(scan.ranges[1]+1)>=0):            
+                if(field[0]-1*int(scan.ranges[1]+1)>=0):       
                     if(grid.data[field[0]-1*int(scan.ranges[1])] == 100):
-                        p_bel1 += 0.8 * p_bel1
+                        r = 0.8 * p_bel1
                     elif(grid.data[field[0]-1*int(scan.ranges[1]+1)] == 100 or grid.data[field[0]-1*int(scan.ranges[1]-1)] == 100):
-                        p_bel1 += 0.1 * p_bel1
+                        r = 0.1 * p_bel1
                     else: 
-                        p_bel1 = 0.0
+                        r = 0.0
 
                 if(field[0]+grid.info.width*int(scan.ranges[2]+1)<len(grid.data)):
                     if(grid.data[field[0]+grid.info.width*int(scan.ranges[2])] == 100):
-                        p_bel1 += 0.8 * p_bel1
+                        e = 0.8 * p_bel1
                     elif(grid.data[field[0]+grid.info.width*int(scan.ranges[2]+1)] == 100 or grid.data[field[0]+grid.info.width*int(scan.ranges[2]-1)] == 100):
-                        p_bel1 += 0.1 * p_bel1
-        
+                        e = 0.1 * p_bel1
                     else: 
-                        p_bel1 = 0.0
+                        e = 0.0
                 
                 if(field[0]+1*int(scan.ranges[3]+1) < len(grid.data)):
                     if(grid.data[field[0]+1*int(scan.ranges[3])] == 100):
-                        p_bel1 += 0.8 * p_bel1
+                        w = 0.8 * p_bel1
                     elif(grid.data[field[0]+1*int(scan.ranges[3]+1)] == 100 or grid.data[field[0]+1*int(scan.ranges[3]-1)] == 100):
-                        p_bel1 += 0.1 * p_bel1
+                        w = 0.1 * p_bel1
                     else: 
-                        p_bel1 = 0.0
-
-            sum_p += p_bel1
+                        w = 0.0
+     
+            if(q != None and r != None and e != None and w != None):
+                p_bel2 = q + r + e + w
+                if(q == 0 or r == 0 or e == 0 or w == 0):
+                    p_bel2 = 0
+            else: 
+                p_bel2 = p_bel1
+                
+            sum_p += p_bel2
            
             y, x= divmod(field[0], 20)
-            probabilities[y][x] = p_bel1
+            probabilities[y][x] = p_bel2
         
 
         n = 1 / sum_p
@@ -201,7 +219,7 @@ class LocalizationNode():
  
         msg_map = self.numpy_to_occupancy_grid(probabilities)
         
-
+        self.timestep = probabilities
 
     def numpy_to_occupancy_grid(self, arr, info=None):
         if not len(arr.shape) == 2:
