@@ -60,7 +60,6 @@ class LocalizationNode():
         
         #Initialize first probability array
         if(len(self.belief) == 0):
-
             #Count accessible [x*l+y][0]s 
             fields = 0
             for field in enumerate(self.grid.data):
@@ -93,9 +92,7 @@ class LocalizationNode():
                     self.ptx_2 = 0
                     self.ptx_3 = 0
                     self.ptx_4 = 0
-                    if(probabilities[x][y] == 0):
-                        pass
-                    elif(self.move.data == "N"):
+                    if(self.move.data == "N"):
                         if(y-1 > 0):
                             self.ptx_1 = probabilities[x-1][y]
                         if(x+1 < 20):
@@ -151,10 +148,10 @@ class LocalizationNode():
                     e = None
                     l = len(row)
                     #South Sensor
-                    if([x*l+y][0]-grid.info.width*int(self.scan.ranges[0]+1) >= 0):
-                        if(self.grid.data[[x*l+y][0]-grid.info.width*int(self.scan.ranges[0])] ==  100):
+                    if([x*l+y][0]-l*int(self.scan.ranges[0]+1) >= 0):
+                        if(self.grid.data[[x*l+y][0]-l*int(self.scan.ranges[0])] ==  100):
                             s = 0.8
-                        elif(self.grid.data[[x*l+y][0]-grid.info.width*int(self.scan.ranges[0]+1)] == 100 or self.grid.data[[x*l+y][0]-grid.info.width*int(self.scan.ranges[0]-1)] == 100):
+                        elif(self.grid.data[[x*l+y][0]-l*int(self.scan.ranges[0]+1)] == 100 or self.grid.data[[x*l+y][0]-l*int(self.scan.ranges[0]-1)] == 100):
                             s = 0.1
                         else: 
                             s = 0.0
@@ -169,10 +166,10 @@ class LocalizationNode():
                             w = 0.0
 
                     #North Sensor
-                    if([x*l+y][0]+grid.info.width*int(self.scan.ranges[2]+1)<len(self.grid.data)):
-                        if(self.grid.data[[x*l+y][0]+grid.info.width*int(self.scan.ranges[2])] == 100):
+                    if([x*l+y][0]+l*int(self.scan.ranges[2]+1)<len(self.grid.data)):
+                        if(self.grid.data[[x*l+y][0]+l*int(self.scan.ranges[2])] == 100):
                             n = 0.8
-                        elif(self.grid.data[[x*l+y][0]+grid.info.width*int(self.scan.ranges[2]+1)] == 100 or self.grid.data[[x*l+y][0]+grid.info.width*int(self.scan.ranges[2]-1)] == 100):
+                        elif(self.grid.data[[x*l+y][0]+l*int(self.scan.ranges[2]+1)] == 100 or self.grid.data[[x*l+y][0]+l*int(self.scan.ranges[2]-1)] == 100):
                             n = 0.1
                         else: 
                             n = 0.0
