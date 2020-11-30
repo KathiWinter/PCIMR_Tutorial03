@@ -148,40 +148,44 @@ class LocalizationNode():
                     s = None
                     w = None
                     e = None
-                
+                    
                     #South Sensor
-                    if([x*l+y][0]-l*int(self.scan.ranges[0]+1) >= 0):
+                    if([x*l+y][0]-l*int(self.scan.ranges[0]) >= 0):
                         if(self.grid.data[[x*l+y][0]-l*int(self.scan.ranges[0])] ==  100):
                             s = 0.8
-                        elif(self.grid.data[[x*l+y][0]-l*int(self.scan.ranges[0]+1)] == 100 or self.grid.data[[x*l+y][0]-l*int(self.scan.ranges[0]-1)] == 100):
-                            s = 0.1
+                        elif([x*l+y][0]-l*int(self.scan.ranges[0]+1) >= 0):
+                            if(self.grid.data[[x*l+y][0]-l*int(self.scan.ranges[0]+1)] == 100 or self.grid.data[[x*l+y][0]-l*int(self.scan.ranges[0]-1)] == 100):
+                                s = 0.1
                         else: 
                             s = 0.0
                     
                     #West Sensor
-                    if([x*l+y][0]-1*int(self.scan.ranges[1]+1)>=0):       
+                    if([x*l+y][0]-1*int(self.scan.ranges[1])>=0):  
                         if(self.grid.data[[x*l+y][0]-1*int(self.scan.ranges[1])] == 100):
-                            w = 0.8
-                        elif(self.grid.data[[x*l+y][0]-1*int(self.scan.ranges[1]+1)] == 100 or self.grid.data[[x*l+y][0]-1*int(self.scan.ranges[1]-1)] == 100):
-                            w = 0.1
+                            w = 0.0
+                        elif([x*l+y][0]-1*int(self.scan.ranges[1]+1)>=0):  
+                            if(self.grid.data[[x*l+y][0]-1*int(self.scan.ranges[1]+1)] == 100 or self.grid.data[[x*l+y][0]-1*int(self.scan.ranges[1]-1)] == 100):
+                                w = 0.1
                         else: 
                             w = 0.0
 
                     #North Sensor
-                    if([x*l+y][0]+l*int(self.scan.ranges[2]+1)<len(self.grid.data)):
+                    if([x*l+y][0]+l*int(self.scan.ranges[2])<len(self.grid.data)):
                         if(self.grid.data[[x*l+y][0]+l*int(self.scan.ranges[2])] == 100):
                             n = 0.8
-                        elif(self.grid.data[[x*l+y][0]+l*int(self.scan.ranges[2]+1)] == 100 or self.grid.data[[x*l+y][0]+l*int(self.scan.ranges[2]-1)] == 100):
-                            n = 0.1
+                        elif([x*l+y][0]+l*int(self.scan.ranges[2]+1)<len(self.grid.data)):
+                            if(self.grid.data[[x*l+y][0]+l*int(self.scan.ranges[2]+1)] == 100 or self.grid.data[[x*l+y][0]+l*int(self.scan.ranges[2]-1)] == 100):
+                                n = 0.1
                         else: 
                             n = 0.0
                     
                     #East Sensor
-                    if([x*l+y][0]+1*int(self.scan.ranges[3]+1) < len(self.grid.data)):
+                    if([x*l+y][0]+1*int(self.scan.ranges[3]) < len(self.grid.data)):
                         if(self.grid.data[[x*l+y][0]+1*int(self.scan.ranges[3])] == 100):
                             e = 0.8
-                        elif(self.grid.data[[x*l+y][0]+1*int(self.scan.ranges[3]+1)] == 100 or self.grid.data[[x*l+y][0]+1*int(self.scan.ranges[3]-1)] == 100):
-                            e = 0.1
+                        elif([x*l+y][0]+1*int(self.scan.ranges[3]+1) < len(self.grid.data)):
+                            if(self.grid.data[[x*l+y][0]+1*int(self.scan.ranges[3]+1)] == 100 or self.grid.data[[x*l+y][0]+1*int(self.scan.ranges[3]-1)] == 100):
+                                e = 0.1
                         else: 
                             e = 0.0
         
