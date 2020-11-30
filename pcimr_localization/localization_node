@@ -31,11 +31,11 @@ class LocalizationNode():
 
         # Initialize Publishers
         self.pub_pos = rospy.Publisher("/robot_pos", Point, queue_size=10)
-        self.pub_marker = rospy.Publisher("/visualization/cube", Marker, queue_size=10)
-        self.pub_grid = rospy.Publisher("/grid", OccupancyGrid, queue_size=10)
+        self.pub_marker = rospy.Publisher("/visualization/robot_pos", Marker, queue_size=10)
+        self.pub_grid = rospy.Publisher("/robot_pos_map", OccupancyGrid, queue_size=10)
 
 
-        self.timestep = []
+        self.belief = []
 
 
     def callback_move(self, param_move):
@@ -66,10 +66,10 @@ class LocalizationNode():
         global move
         global scan
    
-        probabilities = self.timestep
+        probabilities = self.belief
         
         #Initialize first probability array
-        if(len(self.timestep) == 0):
+        if(len(self.belief) == 0):
 
             #Count accessible field[0]s 
             fields = 0
@@ -88,8 +88,9 @@ class LocalizationNode():
                     probabilities[y][x] = 0
                 else: 
                     probabilities[y][x] = self.ptx
-
+        
         sum_p = 0
+
         for field in enumerate(grid.data):
             y, x = divmod(field[0], 20)
             #Incoporate the move-model
@@ -145,62 +146,66 @@ class LocalizationNode():
               
             else: 
                 p_bel1 = probabilities[y][x]
-     
+         
             #Incoroporate sensor model
             #[2.0, 2.0, 10.0, 2.0] S, W, N, E
             if(scan == None):
                 pass
             else:
-                print(scan)
-                q = None
-                r = None
+    
+                n = None
+                s = None
                 w = None
                 e = None
+                #South Sensor
                 if(field[0]-grid.info.width*int(scan.ranges[0]+1) >= 0):
                     if(grid.data[field[0]-grid.info.width*int(scan.ranges[0])] ==  100):
-                        q = 0.8 * p_bel1
+                        s = 0.8
                     elif(grid.data[field[0]-grid.info.width*int(scan.ranges[0]+1)] == 100 or grid.data[field[0]-grid.info.width*int(scan.ranges[0]-1)] == 100):
-                        q = 0.1 * p_bel1
+                        s = 0.1
                     else: 
-                        q = 0.0
-
+                        s = 0.0
+                
+                #West Sensor
                 if(field[0]-1*int(scan.ranges[1]+1)>=0):       
                     if(grid.data[field[0]-1*int(scan.ranges[1])] == 100):
-                        r = 0.8 * p_bel1
+                        w = 0.8
                     elif(grid.data[field[0]-1*int(scan.ranges[1]+1)] == 100 or grid.data[field[0]-1*int(scan.ranges[1]-1)] == 100):
-                        r = 0.1 * p_bel1
-                    else: 
-                        r = 0.0
-
-                if(field[0]+grid.info.width*int(scan.ranges[2]+1)<len(grid.data)):
-                    if(grid.data[field[0]+grid.info.width*int(scan.ranges[2])] == 100):
-                        e = 0.8 * p_bel1
-                    elif(grid.data[field[0]+grid.info.width*int(scan.ranges[2]+1)] == 100 or grid.data[field[0]+grid.info.width*int(scan.ranges[2]-1)] == 100):
-                        e = 0.1 * p_bel1
-                    else: 
-                        e = 0.0
-                
-                if(field[0]+1*int(scan.ranges[3]+1) < len(grid.data)):
-                    if(grid.data[field[0]+1*int(scan.ranges[3])] == 100):
-                        w = 0.8 * p_bel1
-                    elif(grid.data[field[0]+1*int(scan.ranges[3]+1)] == 100 or grid.data[field[0]+1*int(scan.ranges[3]-1)] == 100):
-                        w = 0.1 * p_bel1
+                        w = 0.1
                     else: 
                         w = 0.0
+
+                #North Sensor
+                if(field[0]+grid.info.width*int(scan.ranges[2]+1)<len(grid.data)):
+                    if(grid.data[field[0]+grid.info.width*int(scan.ranges[2])] == 100):
+                        n = 0.8
+                    elif(grid.data[field[0]+grid.info.width*int(scan.ranges[2]+1)] == 100 or grid.data[field[0]+grid.info.width*int(scan.ranges[2]-1)] == 100):
+                        n = 0.1
+                    else: 
+                        n = 0.0
+                
+                #East Sensor
+                if(field[0]+1*int(scan.ranges[3]+1) < len(grid.data)):
+                    if(grid.data[field[0]+1*int(scan.ranges[3])] == 100):
+                        e = 0.8
+                    elif(grid.data[field[0]+1*int(scan.ranges[3]+1)] == 100 or grid.data[field[0]+1*int(scan.ranges[3]-1)] == 100):
+                        e = 0.1
+                    else: 
+                        e = 0.0
      
-            if(q != None and r != None and e != None and w != None):
-                p_bel2 = q + r + e + w
-                if(q == 0 or r == 0 or e == 0 or w == 0):
-                    p_bel2 = 0
+            if(n != None and s != None and e != None and w != None):
+                p_bel2 = (n + s + e + w) * p_bel1
+                if(n == 0 or s == 0 or e == 0 or w == 0):
+                    p_bel2 = 0.0
             else: 
                 p_bel2 = p_bel1
-                
+            
             sum_p += p_bel2
            
             y, x= divmod(field[0], 20)
             probabilities[y][x] = p_bel2
+            #END FOR-LOOP
         
-
         n = 1 / sum_p
 
         for indexp, r in enumerate(probabilities):
@@ -218,8 +223,9 @@ class LocalizationNode():
         
  
         msg_map = self.numpy_to_occupancy_grid(probabilities)
+        print(msg_map)
         
-        self.timestep = probabilities
+        self.belief = probabilities
 
     def numpy_to_occupancy_grid(self, arr, info=None):
         if not len(arr.shape) == 2:
@@ -259,6 +265,7 @@ class LocalizationNode():
             if(msg_map != None):
                 self.pub_grid.publish(msg_map)
                 self.pub_pos.publish(Point(self.max_point[0], self.max_point[1], 0))
+
 
             if rate:
                 rospy.sleep(1/rate)
