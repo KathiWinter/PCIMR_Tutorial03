@@ -14,14 +14,10 @@ class LocalizationNode():
 
     def __init__(self):
 
-        global move
-        move = None
-        global scan 
-        scan = None
-        global grid 
-        grid = None
-        global msg_map
-        msg_map = None
+        self.move = None
+        self.scan = None
+        self.grid = None
+        self.msg_map = None
 
 
         # Initialize Subscribers
@@ -36,44 +32,38 @@ class LocalizationNode():
 
 
         self.belief = []
-
+        self.max_point = (2,2)
 
     def callback_move(self, param_move):
-        global move
-        move = param_move
+        self.move
+        self.move = param_move
         
     def callback_scan(self, param_scan):
-        global scan 
-        scan = param_scan
+        self.scan = param_scan
 
     def callback_grid(self, param_grid):
-        global grid
-        global msg_map
-        grid = param_grid
+        self.grid = param_grid
 
         msg_map = OccupancyGrid()
-        msg_map.header.frame_id = grid.header.frame_id
-        msg_map.header.seq = grid.header.seq
+        msg_map.header.frame_id =self.grid.header.frame_id
+        msg_map.header.seq =self.grid.header.seq
         msg_map.info.map_load_time = rospy.Time.now()
-        msg_map.info.resolution = grid.info.resolution
-        msg_map.info.height = grid.info.height
-        msg_map.info.width = grid.info.width
+        msg_map.info.resolution =self.grid.info.resolution
+        msg_map.info.height =self.grid.info.height
+        msg_map.info.width =self.grid.info.width
 
-        self.bayes_filter(grid)
+        self.bayes_filter(self.grid)
 
     def bayes_filter(self,grid):
-        global msg_map
-        global move
-        global scan
    
         probabilities = self.belief
         
         #Initialize first probability array
         if(len(self.belief) == 0):
 
-            #Count accessible field[0]s 
+            #Count accessible grid.data[x*l+y]s 
             fields = 0
-            for field in enumerate(grid.data):
+            for field in enumerate(self.grid.data):
                 if field[1] == 0:
                     fields += 1
 
@@ -81,140 +71,141 @@ class LocalizationNode():
             #Probability of being kidnapped randomly to one field, for each field
             self.ptx = 1/fields
 
-            probabilities = np.transpose(np.asarray(grid.data, dtype=np.float).reshape(grid.info.width, grid.info.height))
-            for field in enumerate(grid.data):
-                y, x = divmod(field[0], 20)
-                if field[1] != 0: 
-                    probabilities[y][x] = 0
-                else: 
-                    probabilities[y][x] = self.ptx
-        
+            probabilities = np.transpose(np.asarray(self.grid.data, dtype=np.float).reshape(self.grid.info.width,self.grid.info.height))
+            
+            for x, row in enumerate(probabilities):
+                for y, _ in enumerate(row):
+                    l = len(row)
+                    if grid.data[y*l+x]!= 0: 
+                        probabilities[x][y] = 0
+                    else: 
+                        probabilities[x][y] = self.ptx
+
         sum_p = 0
 
-        for field in enumerate(grid.data):
-            y, x = divmod(field[0], 20)
-            #Incoporate the move-model
+        for x, row in enumerate(probabilities):
+            for y, _ in enumerate(row):
+            #Incoporate theself.move-model
 
-            move_uncertainty = np.array([0.9,0.04,0.04,0.0,0.02])
-            if(move != None):
-                self.ptx_1 = 0
-                self.ptx_2 = 0
-                self.ptx_3 = 0
-                self.ptx_4 = 0
-                if(probabilities[y][x] == 0):
-                    pass
-                elif(move.data == "N"):
-                    if(y-1 > 0):
-                        self.ptx_1 = probabilities[y-1][x]
-                    if(x+1 < 20):
-                        self.ptx_2 = probabilities[y][x+1]
-                    if(x-1 > 0):
-                        self.ptx_3 = probabilities[y][x-1]
-                    if(y+1 < 20):
-                        self.ptx_4 = probabilities[y+1][x]
-                elif(move.data == "S"):
-                    if(y+1 < 20):
-                        self.ptx_1 = probabilities[y+1][x]
-                    if(x-1 > 0):
-                        self.ptx_2 = probabilities[y][x-1]
-                    if(x+1 < 20):
-                        self.ptx_3 = probabilities[y][x+1]
-                    if(y-1 > 0):
-                        self.ptx_4 = probabilities[y-1][x]
-                elif(move.data == "E"):
-                    if(x-1 > 0):
-                        self.ptx_1 = probabilities[y][x-1]
-                    if(y-1 > 0):
-                        self.ptx_2 = probabilities[y-1][x]
-                    if(y+1 < 20):
-                        self.ptx_3 = probabilities[y+1][x]
-                    if(x+1 < 20):
-                        self.ptx_4 = probabilities[y][x+1]
-                elif(move.data == "W"):
-                    if(x+1 < 20):
-                        self.ptx_1 = probabilities[y][x+1]
-                    if(y+1 < 20):
-                        self.ptx_2 = probabilities[y+1][x]
-                    if(y-1 > 0):
-                        self.ptx_3 = probabilities[y-1][x]
-                    if(x-1 > 0):
-                        self.ptx_4 = probabilities[y][x-1]
-                else:
-                    print("error receiving directions")
+                self.move_uncertainty = np.array([0.9,0.04,0.04,0.0,0.02])
+                if(self.move != None):
+                    self.ptx_1 = 0
+                    self.ptx_2 = 0
+                    self.ptx_3 = 0
+                    self.ptx_4 = 0
+                    if(probabilities[x][y] == 0):
+                        pass
+                    elif(self.move.data == "N"):
+                        if(y-1 > 0):
+                            self.ptx_1 = probabilities[x-1][y]
+                        if(x+1 < 20):
+                            self.ptx_2 = probabilities[x+1][y]
+                        if(x-1 > 0):
+                            self.ptx_3 = probabilities[x-1][y]
+                        if(y+1 < 20):
+                            self.ptx_4 = probabilities[x][y+1]
+                    elif(self.move.data == "S"):
+                        if(y+1 < 20):
+                            self.ptx_1 = probabilities[x][y+1]
+                        if(x-1 > 0):
+                            self.ptx_2 = probabilities[x-1][y] 
+                        if(x+1 < 20):
+                            self.ptx_3 = probabilities[x+1][y]
+                        if(y-1 > 0):
+                            self.ptx_4 = probabilities[x][y-1]
+                    elif(self.move.data == "E"):
+                        if(x-1 > 0):
+                            self.ptx_1 = probabilities[x-1][y]
+                        if(y-1 > 0):
+                            self.ptx_2 = probabilities[x][y-1]
+                        if(y+1 < 20):
+                            self.ptx_3 = probabilities[x][y+1]
+                        if(x+1 < 20):
+                            self.ptx_4 = probabilities[x+1][y]
+                    elif(self.move.data == "W"):
+                        if(x+1 < 20):
+                            self.ptx_1 = probabilities[x+1][y]
+                        if(y+1 < 20):
+                            self.ptx_2 = probabilities[x][y+1]
+                        if(y-1 > 0):
+                            self.ptx_3 = probabilities[x][y-1]
+                        if(x-1 > 0):
+                            self.ptx_4 = probabilities[x-1][y]
+                    else:
+                        print("error receiving directions")
 
-                p_bel1 = np.dot(move_uncertainty, [self.ptx_1, self.ptx_2, self.ptx_3, self.ptx_4, probabilities[y][x]])
-              
-            else: 
-                p_bel1 = probabilities[y][x]
+                    p_bel1 = np.dot(self.move_uncertainty, [self.ptx_1, self.ptx_2, self.ptx_3, self.ptx_4, probabilities[x][y]])
+                
+                else: 
+                    p_bel1 = probabilities[x][y]
          
-            #Incoroporate sensor model
-            #[2.0, 2.0, 10.0, 2.0] S, W, N, E
-            if(scan == None):
-                pass
-            else:
-    
-                n = None
-                s = None
-                w = None
-                e = None
-                #South Sensor
-                if(field[0]-grid.info.width*int(scan.ranges[0]+1) >= 0):
-                    if(grid.data[field[0]-grid.info.width*int(scan.ranges[0])] ==  100):
-                        s = 0.8
-                    elif(grid.data[field[0]-grid.info.width*int(scan.ranges[0]+1)] == 100 or grid.data[field[0]-grid.info.width*int(scan.ranges[0]-1)] == 100):
-                        s = 0.1
-                    else: 
-                        s = 0.0
-                
-                #West Sensor
-                if(field[0]-1*int(scan.ranges[1]+1)>=0):       
-                    if(grid.data[field[0]-1*int(scan.ranges[1])] == 100):
-                        w = 0.8
-                    elif(grid.data[field[0]-1*int(scan.ranges[1]+1)] == 100 or grid.data[field[0]-1*int(scan.ranges[1]-1)] == 100):
-                        w = 0.1
-                    else: 
-                        w = 0.0
+                #Incoroporate sensor model
+                #[2.0, 2.0, 10.0, 2.0] S, W, N, E
+                                                                                  
+                if(self.scan == None):
+                    pass
+                else:
+                    n = None
+                    s = None
+                    w = None
+                    e = None
+                    l = len(row)
+                    #South Sensor
+                    if(grid.data[x*l+y]-grid.info.width*int(self.scan.ranges[0]+1) >= 0):
+                        if(self.grid.data[grid.data[x*l+y]-grid.info.width*int(self.scan.ranges[0])] ==  100):
+                            s = 0.8
+                        elif(self.grid.data[grid.data[x*l+y]-grid.info.width*int(self.scan.ranges[0]+1)] == 100 or self.grid.data[grid.data[x*l+y]-grid.info.width*int(self.scan.ranges[0]-1)] == 100):
+                            s = 0.1
+                        else: 
+                            s = 0.0
+                    
+                    #West Sensor
+                    if(grid.data[x*l+y]-1*int(self.scan.ranges[1]+1)>=0):       
+                        if(self.grid.data[grid.data[x*l+y]-1*int(self.scan.ranges[1])] == 100):
+                            w = 0.8
+                        elif(self.grid.data[grid.data[x*l+y]-1*int(self.scan.ranges[1]+1)] == 100 or self.grid.data[grid.data[x*l+y]-1*int(self.scan.ranges[1]-1)] == 100):
+                            w = 0.1
+                        else: 
+                            w = 0.0
 
-                #North Sensor
-                if(field[0]+grid.info.width*int(scan.ranges[2]+1)<len(grid.data)):
-                    if(grid.data[field[0]+grid.info.width*int(scan.ranges[2])] == 100):
-                        n = 0.8
-                    elif(grid.data[field[0]+grid.info.width*int(scan.ranges[2]+1)] == 100 or grid.data[field[0]+grid.info.width*int(scan.ranges[2]-1)] == 100):
-                        n = 0.1
-                    else: 
-                        n = 0.0
+                    #North Sensor
+                    if(grid.data[x*l+y]+grid.info.width*int(self.scan.ranges[2]+1)<len(self.grid.data)):
+                        if(self.grid.data[grid.data[x*l+y]+grid.info.width*int(self.scan.ranges[2])] == 100):
+                            n = 0.8
+                        elif(self.grid.data[grid.data[x*l+y]+grid.info.width*int(self.scan.ranges[2]+1)] == 100 or self.grid.data[grid.data[x*l+y]+grid.info.width*int(self.scan.ranges[2]-1)] == 100):
+                            n = 0.1
+                        else: 
+                            n = 0.0
+                    
+                    #East Sensor
+                    if(grid.data[x*l+y]+1*int(self.scan.ranges[3]+1) < len(self.grid.data)):
+                        if(self.grid.data[grid.data[x*l+y]+1*int(self.scan.ranges[3])] == 100):
+                            e = 0.8
+                        elif(self.grid.data[grid.data[x*l+y]+1*int(self.scan.ranges[3]+1)] == 100 or self.grid.data[grid.data[x*l+y]+1*int(self.scan.ranges[3]-1)] == 100):
+                            e = 0.1
+                        else: 
+                            e = 0.0
+        
+                if(n != None and s != None and e != None and w != None):
+                    p_bel2 = (n + s + e + w) * p_bel1
+                    if(n == 0 or s == 0 or e == 0 or w == 0):
+                        p_bel2 = 0.0
+                else: 
+                    p_bel2 = p_bel1
                 
-                #East Sensor
-                if(field[0]+1*int(scan.ranges[3]+1) < len(grid.data)):
-                    if(grid.data[field[0]+1*int(scan.ranges[3])] == 100):
-                        e = 0.8
-                    elif(grid.data[field[0]+1*int(scan.ranges[3]+1)] == 100 or grid.data[field[0]+1*int(scan.ranges[3]-1)] == 100):
-                        e = 0.1
-                    else: 
-                        e = 0.0
-     
-            if(n != None and s != None and e != None and w != None):
-                p_bel2 = (n + s + e + w) * p_bel1
-                if(n == 0 or s == 0 or e == 0 or w == 0):
-                    p_bel2 = 0.0
-            else: 
-                p_bel2 = p_bel1
-            
-            sum_p += p_bel2
-           
-            y, x= divmod(field[0], 20)
-            probabilities[y][x] = p_bel2
-            #END FOR-LOOP
+                sum_p += p_bel2
+    
+                probabilities[x][y] = p_bel2
+                #END FOR-LOOP
         
         n = 1 / sum_p
 
         for indexp, r in enumerate(probabilities):
             for indexx, p in enumerate(r):
-                probabilities[indexp][indexx] = p * n
+                probabilities[indexx][indexp] = p * n
                 
         
         max = 0
-        self.max_point = (0,0)
         for indexi, i in enumerate(probabilities):
             for indexx, x in enumerate(i):
                 if x > max:
@@ -222,8 +213,8 @@ class LocalizationNode():
                     self.max_point = (indexx, indexi)
         
  
-        msg_map = self.numpy_to_occupancy_grid(probabilities)
-        print(msg_map)
+        self.msg_map = self.numpy_to_occupancy_grid(probabilities)
+        self.msg_map.info.resolution = 1.0
         
         self.belief = probabilities
 
@@ -238,16 +229,16 @@ class LocalizationNode():
 
         arr = np.array(np.transpose(arr), dtype=np.int8)
 
-        grid = OccupancyGrid()
+        self.grid = OccupancyGrid()
         if isinstance(arr, np.ma.MaskedArray):
             # We assume that the masked value are already -1, for speed
             arr = arr.data
-        grid.data = arr.ravel()
-        grid.info = info or MapMetaData()
-        grid.info.height = arr.shape[0]
-        grid.info.width = arr.shape[1]
+        self.grid.data = arr.ravel()
+        self.grid.info = info or MapMetaData()
+        self.grid.info.height = arr.shape[0]
+        self.grid.info.width = arr.shape[1]
 
-        return grid
+        return self.grid
 
 
     def run(self, rate: float = 1):
@@ -257,13 +248,11 @@ class LocalizationNode():
         @param rate: The rate at which the topics are published.
         """
 
-        global msg_map
-
         while not rospy.is_shutdown():
 
             # Publish messages
-            if(msg_map != None):
-                self.pub_grid.publish(msg_map)
+            if(self.msg_map != None):
+                self.pub_grid.publish(self.msg_map)
                 self.pub_pos.publish(Point(self.max_point[0], self.max_point[1], 0))
 
 
