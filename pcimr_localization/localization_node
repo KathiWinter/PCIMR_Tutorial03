@@ -61,7 +61,7 @@ class LocalizationNode():
         #Initialize first probability array
         if(len(self.belief) == 0):
 
-            #Count accessible grid.data[x*l+y]s 
+            #Count accessible [x*l+y][0]s 
             fields = 0
             for field in enumerate(self.grid.data):
                 if field[1] == 0:
@@ -151,37 +151,37 @@ class LocalizationNode():
                     e = None
                     l = len(row)
                     #South Sensor
-                    if(grid.data[x*l+y]-grid.info.width*int(self.scan.ranges[0]+1) >= 0):
-                        if(self.grid.data[grid.data[x*l+y]-grid.info.width*int(self.scan.ranges[0])] ==  100):
+                    if([x*l+y][0]-grid.info.width*int(self.scan.ranges[0]+1) >= 0):
+                        if(self.grid.data[[x*l+y][0]-grid.info.width*int(self.scan.ranges[0])] ==  100):
                             s = 0.8
-                        elif(self.grid.data[grid.data[x*l+y]-grid.info.width*int(self.scan.ranges[0]+1)] == 100 or self.grid.data[grid.data[x*l+y]-grid.info.width*int(self.scan.ranges[0]-1)] == 100):
+                        elif(self.grid.data[[x*l+y][0]-grid.info.width*int(self.scan.ranges[0]+1)] == 100 or self.grid.data[[x*l+y][0]-grid.info.width*int(self.scan.ranges[0]-1)] == 100):
                             s = 0.1
                         else: 
                             s = 0.0
                     
                     #West Sensor
-                    if(grid.data[x*l+y]-1*int(self.scan.ranges[1]+1)>=0):       
-                        if(self.grid.data[grid.data[x*l+y]-1*int(self.scan.ranges[1])] == 100):
+                    if([x*l+y][0]-1*int(self.scan.ranges[1]+1)>=0):       
+                        if(self.grid.data[[x*l+y][0]-1*int(self.scan.ranges[1])] == 100):
                             w = 0.8
-                        elif(self.grid.data[grid.data[x*l+y]-1*int(self.scan.ranges[1]+1)] == 100 or self.grid.data[grid.data[x*l+y]-1*int(self.scan.ranges[1]-1)] == 100):
+                        elif(self.grid.data[[x*l+y][0]-1*int(self.scan.ranges[1]+1)] == 100 or self.grid.data[[x*l+y][0]-1*int(self.scan.ranges[1]-1)] == 100):
                             w = 0.1
                         else: 
                             w = 0.0
 
                     #North Sensor
-                    if(grid.data[x*l+y]+grid.info.width*int(self.scan.ranges[2]+1)<len(self.grid.data)):
-                        if(self.grid.data[grid.data[x*l+y]+grid.info.width*int(self.scan.ranges[2])] == 100):
+                    if([x*l+y][0]+grid.info.width*int(self.scan.ranges[2]+1)<len(self.grid.data)):
+                        if(self.grid.data[[x*l+y][0]+grid.info.width*int(self.scan.ranges[2])] == 100):
                             n = 0.8
-                        elif(self.grid.data[grid.data[x*l+y]+grid.info.width*int(self.scan.ranges[2]+1)] == 100 or self.grid.data[grid.data[x*l+y]+grid.info.width*int(self.scan.ranges[2]-1)] == 100):
+                        elif(self.grid.data[[x*l+y][0]+grid.info.width*int(self.scan.ranges[2]+1)] == 100 or self.grid.data[[x*l+y][0]+grid.info.width*int(self.scan.ranges[2]-1)] == 100):
                             n = 0.1
                         else: 
                             n = 0.0
                     
                     #East Sensor
-                    if(grid.data[x*l+y]+1*int(self.scan.ranges[3]+1) < len(self.grid.data)):
-                        if(self.grid.data[grid.data[x*l+y]+1*int(self.scan.ranges[3])] == 100):
+                    if([x*l+y][0]+1*int(self.scan.ranges[3]+1) < len(self.grid.data)):
+                        if(self.grid.data[[x*l+y][0]+1*int(self.scan.ranges[3])] == 100):
                             e = 0.8
-                        elif(self.grid.data[grid.data[x*l+y]+1*int(self.scan.ranges[3]+1)] == 100 or self.grid.data[grid.data[x*l+y]+1*int(self.scan.ranges[3]-1)] == 100):
+                        elif(self.grid.data[[x*l+y][0]+1*int(self.scan.ranges[3]+1)] == 100 or self.grid.data[[x*l+y][0]+1*int(self.scan.ranges[3]-1)] == 100):
                             e = 0.1
                         else: 
                             e = 0.0
@@ -210,7 +210,7 @@ class LocalizationNode():
             for indexx, x in enumerate(i):
                 if x > max:
                     max = x
-                    self.max_point = (indexx, indexi)
+                    self.max_point = (indexi, indexx)
         
  
         self.msg_map = self.numpy_to_occupancy_grid(probabilities)
