@@ -60,7 +60,7 @@ class LocalizationNode():
         
         #Initialize first probability array
         if(len(self.belief) == 0):
-            #Count accessible [x*l+y][0]s 
+            #Count accessible y*l+xs 
             fields = 0
             for field in enumerate(self.grid.data):
                 if field[1] == 0:
@@ -81,10 +81,12 @@ class LocalizationNode():
                         probabilities[x][y] = self.ptx
 
         sum_p = 0
-
+        
         for x, row in enumerate(probabilities):
             for y, _ in enumerate(row):
-            #Incoporate theself.move-model
+
+
+                #Incoporate theself.move-model
                 l = len(row)
                 self.move_uncertainty = np.array([0.9,0.04,0.04,0.0,0.02])
                 if(self.move != None):
@@ -92,11 +94,11 @@ class LocalizationNode():
                     self.ptx_2 = 0
                     self.ptx_3 = 0
                     self.ptx_4 = 0
-                    if(grid.data[x*l+y] != 0):
+                    if(grid.data[y*l+x] != 0):
                         probabilities[x][y] = 0.0
                     elif(self.move.data == "N"):
                         if(y-1 > 0):
-                            self.ptx_1 = probabilities[x-1][y]
+                            self.ptx_1 = probabilities[x][y-1]
                         if(x+1 < 20):
                             self.ptx_2 = probabilities[x+1][y]
                         if(x-1 > 0):
@@ -134,78 +136,98 @@ class LocalizationNode():
                         print("error receiving directions")
 
                     p_bel1 = np.dot(self.move_uncertainty, [self.ptx_1, self.ptx_2, self.ptx_3, self.ptx_4, probabilities[x][y]])
-                
+                   
                 else: 
                     p_bel1 = probabilities[x][y]
          
                 #Incoroporate sensor model
-                #[2.0, 2.0, 10.0, 2.0] S, W, N, E
-                                                                                  
+                #[2.0, 2.0, 10.0, 2.0] S, W, N, E                                             
                 if(self.scan == None):
                     pass
+                elif(grid.data[y*l+x] != 0):
+                    probabilities[x][y] = 0.0
                 else:
-                    n = None
-                    s = None
-                    w = None
-                    e = None
-                    
+                    n = 0.0
+                    s = 0.0
+                    w = 0.0
+                    e = 0.0
                     #South Sensor
-                    if([x*l+y][0]-l*int(self.scan.ranges[0]) >= 0):
-                        if(self.grid.data[[x*l+y][0]-l*int(self.scan.ranges[0])] ==  100):
+                    if(y*l+x-l*int(self.scan.ranges[0]) >= 0):
+                        if(self.grid.data[y*l+x-l*int(self.scan.ranges[0])] ==  100):
                             s = 0.8
-                        elif([x*l+y][0]-l*int(self.scan.ranges[0]+1) >= 0):
-                            if(self.grid.data[[x*l+y][0]-l*int(self.scan.ranges[0]+1)] == 100 or self.grid.data[[x*l+y][0]-l*int(self.scan.ranges[0]-1)] == 100):
+                        elif(y*l+x-l*int(self.scan.ranges[0]+1) >= 0):
+                            if(self.grid.data[y*l+x-l*int(self.scan.ranges[0]+1)] == 100 or self.grid.data[y*l+x-l*int(self.scan.ranges[0]-1)] == 100):
                                 s = 0.1
                         else: 
                             s = 0.0
-                    
+               
                     #West Sensor
-                    if([x*l+y][0]-1*int(self.scan.ranges[1])>=0):  
-                        if(self.grid.data[[x*l+y][0]-1*int(self.scan.ranges[1])] == 100):
+                    if(y*l+x-1*int(self.scan.ranges[1])>=0):  
+                        flag = 0
+                        for z in range(int(self.scan.ranges[1])):
+                            if(self.grid.data[y*l+x-1*z] != 0):
+                                flag = 1
+                        if(flag == 0 and y*l+x-1*int(self.scan.ranges[1]) == (y-1)*l+19):
+                            w = 0.8
+                        elif(flag == 0 and y*l+x-1*int(self.scan.ranges[3]+1) == (y+1)*l or flag == 0 and y*l+x-1*int(self.scan.ranges[3]-1) == (y+1)*l):
+                            w = 0.1
+                        elif(flag == 1): 
                             w = 0.0
-                        elif([x*l+y][0]-1*int(self.scan.ranges[1]+1)>=0):  
-                            if(self.grid.data[[x*l+y][0]-1*int(self.scan.ranges[1]+1)] == 100 or self.grid.data[[x*l+y][0]-1*int(self.scan.ranges[1]-1)] == 100):
+                        elif(self.grid.data[y*l+x-1*int(self.scan.ranges[1])] == 100):  
+            
+                            w = 0.8
+                        elif(y*l+x-1*int(self.scan.ranges[1]+1)>=0):  
+                            if(self.grid.data[y*l+x-1*int(self.scan.ranges[1]+1)] == 100 or self.grid.data[y*l+x-1*int(self.scan.ranges[1]-1)] == 100):
                                 w = 0.1
-                        else: 
-                            w = 0.0
 
                     #North Sensor
-                    if([x*l+y][0]+l*int(self.scan.ranges[2])<len(self.grid.data)):
-                        if(self.grid.data[[x*l+y][0]+l*int(self.scan.ranges[2])] == 100):
+                    if(y*l+x+l*int(self.scan.ranges[2])<len(self.grid.data)):
+                        if(self.grid.data[y*l+x+l*int(self.scan.ranges[2])] == 100):
                             n = 0.8
-                        elif([x*l+y][0]+l*int(self.scan.ranges[2]+1)<len(self.grid.data)):
-                            if(self.grid.data[[x*l+y][0]+l*int(self.scan.ranges[2]+1)] == 100 or self.grid.data[[x*l+y][0]+l*int(self.scan.ranges[2]-1)] == 100):
+                        elif(y*l+x+l*int(self.scan.ranges[2]+1)<len(self.grid.data)):
+                            if(self.grid.data[y*l+x+l*int(self.scan.ranges[2]+1)] == 100 or self.grid.data[y*l+x+l*int(self.scan.ranges[2]-1)] == 100):
                                 n = 0.1
                         else: 
                             n = 0.0
                     
+                    
                     #East Sensor
-                    if([x*l+y][0]+1*int(self.scan.ranges[3]) < len(self.grid.data)):
-                        if(self.grid.data[[x*l+y][0]+1*int(self.scan.ranges[3])] == 100):
+                    if(y*l+x+1*int(self.scan.ranges[3]) < len(self.grid.data)):
+                        flag = 0
+                        for z in range(int(self.scan.ranges[3])):
+                            if(self.grid.data[y*l+x+1*z] != 0):
+                                flag = 1
+                        if(flag == 0 and y*l+x+1*int(self.scan.ranges[3]) == (y+1)*l):
+                            w = 0.8
+                        elif(flag == 0 and y*l+x+1*int(self.scan.ranges[3]+1) == (y+1)*l or flag == 0 and y*l+x+1*int(self.scan.ranges[3]-1) == (y+1)*l):
+                            w = 0.1
+                        elif(flag == 1): 
+                            w = 0.0
+                        elif(self.grid.data[y*l+x+1*int(self.scan.ranges[3])] == 100):
                             e = 0.8
-                        elif([x*l+y][0]+1*int(self.scan.ranges[3]+1) < len(self.grid.data)):
-                            if(self.grid.data[[x*l+y][0]+1*int(self.scan.ranges[3]+1)] == 100 or self.grid.data[[x*l+y][0]+1*int(self.scan.ranges[3]-1)] == 100):
+                        elif(y*l+x+1*int(self.scan.ranges[3]+1) < len(self.grid.data)):
+                            if(self.grid.data[y*l+x+1*int(self.scan.ranges[3]+1)] == 100 or self.grid.data[y*l+x+1*int(self.scan.ranges[3]-1)] == 100):
                                 e = 0.1
                         else: 
                             e = 0.0
-        
-                if(n != None and s != None and e != None and w != None):
-                    p_bel2 = (n + s + e + w) * p_bel1
-                    if(n == 0 or s == 0 or e == 0 or w == 0):
+                    e = 0.8
+       
+                    if(n != 0.0 and s != 0.0 and e != 0.0 and w != 0.0):
+                        p_bel2 = (n + s + e + w) * 1
+                    else: 
                         p_bel2 = 0.0
-                else: 
-                    p_bel2 = p_bel1
                 
-                sum_p += p_bel2
+                    sum_p += p_bel2
     
-                probabilities[x][y] = p_bel2
-                #END FOR-LOOP
+                    probabilities[x][y] = p_bel2
+                    #END FOR-LOOP
         
-        n = 1 / sum_p
-
-        for indexp, r in enumerate(probabilities):
-            for indexx, p in enumerate(r):
-                probabilities[indexx][indexp] = p * n
+        
+        if(sum_p != 0):
+            n = 1 / sum_p
+            for indexp, r in enumerate(probabilities):
+                for indexx, p in enumerate(r):
+                    probabilities[indexp][indexx] = p * n
                 
         
         max = 0
