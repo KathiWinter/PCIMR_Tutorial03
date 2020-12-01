@@ -59,7 +59,7 @@ class LocalizationNode():
         probabilities = self.belief
         
         #Initialize first probability array
-        if(len(self.belief) == 0):
+        if(len(self.belief) == 0 or np.sum(self.belief) == 0):
             #Count accessible y*l+xs 
             fields = 0
             for field in enumerate(self.grid.data):
@@ -79,7 +79,7 @@ class LocalizationNode():
                         probabilities[x][y] = 0
                     else: 
                         probabilities[x][y] = self.ptx
-
+    
         sum_p = 0
         
         for x, row in enumerate(probabilities):
@@ -94,9 +94,7 @@ class LocalizationNode():
                     self.ptx_2 = 0
                     self.ptx_3 = 0
                     self.ptx_4 = 0
-                    if(grid.data[y*l+x] != 0):
-                        probabilities[x][y] = 0.0
-                    elif(self.move.data == "N"):
+                    if(self.move.data == "N"):
                         if(y-1 > 0):
                             self.ptx_1 = probabilities[x][y-1]
                         if(x+1 < 20):
@@ -136,7 +134,7 @@ class LocalizationNode():
                         print("error receiving directions")
 
                     p_bel1 = np.dot(self.move_uncertainty, [self.ptx_1, self.ptx_2, self.ptx_3, self.ptx_4, probabilities[x][y]])
-                   
+
                 else: 
                     p_bel1 = probabilities[x][y]
          
@@ -214,7 +212,7 @@ class LocalizationNode():
               
        
                     if(n != 0.0 and s != 0.0  and w != 0.0):
-                        p_bel2 = (n + s + w) * p_bel1 * 10
+                        p_bel2 = (n + s + w) * p_bel1
                     else: 
                         p_bel2 = 0.0
                 
@@ -238,7 +236,6 @@ class LocalizationNode():
                     max = x
                     self.max_point = (indexi, indexx)
         
- 
         self.msg_map = self.numpy_to_occupancy_grid(probabilities)
         self.msg_map.info.resolution = 1.0
         
