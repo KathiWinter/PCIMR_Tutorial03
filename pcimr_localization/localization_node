@@ -150,7 +150,8 @@ class LocalizationNode():
                     n = 0.0
                     s = 0.0
                     w = 0.0
-                    e = 0.0
+                    #e = 0.0
+
                     #South Sensor
                     if(y*l+x-l*int(self.scan.ranges[0]) >= 0):
                         if(self.grid.data[y*l+x-l*int(self.scan.ranges[0])] ==  100):
@@ -192,7 +193,7 @@ class LocalizationNode():
                     
                     
                     #East Sensor
-                    if(y*l+x+1*int(self.scan.ranges[3]) < len(self.grid.data)):
+                    '''if(y*l+x+1*int(self.scan.ranges[3]) < len(self.grid.data)):
                         flag = 0
                         for z in range(int(self.scan.ranges[3])):
                             if(self.grid.data[y*l+x+1*z] != 0):
@@ -209,11 +210,11 @@ class LocalizationNode():
                             if(self.grid.data[y*l+x+1*int(self.scan.ranges[3]+1)] == 100 or self.grid.data[y*l+x+1*int(self.scan.ranges[3]-1)] == 100):
                                 e = 0.1
                         else: 
-                            e = 0.0
-                    e = 0.8
+                            e = 0.0'''
+              
        
-                    if(n != 0.0 and s != 0.0 and e != 0.0 and w != 0.0):
-                        p_bel2 = (n + s + e + w) * 1
+                    if(n != 0.0 and s != 0.0  and w != 0.0):
+                        p_bel2 = (n + s + w) * p_bel1 * 10
                     else: 
                         p_bel2 = 0.0
                 
