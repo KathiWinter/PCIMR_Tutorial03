@@ -9,7 +9,7 @@ As the code still contained some bugs, I modified the algorithm like the followi
 - The robot only listens to north, west and south sensor data. </br>
 - When the robot looses its position, the map is initialized with equal probabilities again. </br>
 
-
-
+Note: </br>
+The robot finds its goal fast sometimes, but sometimes it takes a while. Please be patient with it.
 
   
